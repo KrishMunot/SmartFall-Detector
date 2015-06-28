@@ -1,4 +1,4 @@
-SmartFall [](#)
+SmartFall Detector [](#)
 ====================
 
 Krish Munot
