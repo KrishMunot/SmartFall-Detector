@@ -1,4 +1,4 @@
-SmartFall Detector [[![Status](https://rawgit.com/krish/krishunot.github.io/master/images/inactive.svg)](#)
+SmartFall Detector [](#)
 ====================
 
 Krish Munot
