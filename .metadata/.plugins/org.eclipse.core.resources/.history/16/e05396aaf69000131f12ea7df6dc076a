@@ -1,0 +1,65 @@
+package com.usc.ss12.falldetectionapp;
+
+import android.os.Bundle;
+import android.app.Activity;
+import android.view.Menu;
+
+public class MainActivity extends Activity {
+	
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+    }
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+    
+    long starttime = 0;
+	Timer timer = new Timer();
+	TextView timerTextView;
+	final Handler h = new Handler(new Callback() { 
+		 
+        public boolean handleMessage(Message msg) { 
+           long millis = System.currentTimeMillis() - starttime; 
+           int seconds = (int) (millis / 1000);
+           timerTextView.setText("" + (GameScreen.GAME_TIME - seconds));
+           if(GameScreen.GAME_TIME < seconds)
+           {
+        	   Timer timerTemp = new Timer();
+        	   timerTemp.schedule(new SecondTask(), 0);
+           }
+           return false;
+        }
+    });
+	
+	final Handler h2 = new Handler(new Callback() { 
+		 
+        public boolean handleMessage(Message msg) { 
+           endGame();
+           return false;
+        }
+    }); 
+	
+	class FirstTask extends TimerTask { 
+		 
+        @Override 
+        public void run() { 
+            h.sendEmptyMessage(0); 
+        }
+   };
+   
+    class SecondTask extends TimerTask { 
+		 
+       @Override 
+       public void run() { 
+           h2.sendEmptyMessage(0); 
+       }
+   };
+    
+}

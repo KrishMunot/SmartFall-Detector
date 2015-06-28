@@ -1,0 +1,5 @@
+package com.usc.ss12.falldetectionapp;
+
+public class AccelerometerReader {
+
+}

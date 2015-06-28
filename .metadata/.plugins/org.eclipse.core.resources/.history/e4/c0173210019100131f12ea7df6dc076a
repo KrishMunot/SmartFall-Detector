@@ -1,0 +1,70 @@
+/*
+ * Code for AccelerometerReader class based on:
+ * http://www.anddev.org/accessing_the_accelerometer-t499.html
+ */
+
+package com.usc.ss12.falldetectionapp;
+
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorManager;
+import android.view.Surface;
+
+public class AccelerometerReader {
+	
+	private boolean mAccelerometerAvailable = false;
+    private boolean isEnabled = false;
+    
+    private SensorManager mSensorManager;
+    private Sensor mAccelerometer;
+
+    public AccelerometerReader() throws UnsupportedOperationException { 
+    	// Check if accelerometer exists
+        for (Sensor aSensor : mSensorManager.getSensorList(Sensor.TYPE_ALL))
+			if (aSensor.equals(Sensor.TYPE_ACCELEROMETER))
+				mAccelerometerAvailable = true;
+        if (!mAccelerometerAvailable)
+        	throw new UnsupportedOperationException("Accelerometer is not available.");
+    }
+
+    public void setEnableAccelerometer(boolean doEnable) throws UnsupportedOperationException {
+		if (!mAccelerometerAvailable)
+			throw new UnsupportedOperationException("Accelerometer is not available.");
+		
+		/* If should be enabled and not already is */
+		if (doEnable && !this.isEnabled) {
+	        //mSensorManager.;
+	        isEnabled = true;
+		}
+		
+		/* If should be disabled and not already is */
+		else if (!doEnable && this.isEnabled) {
+	        //Sensor.disableSensor(Sensors.SENSOR_ACCELEROMETER);
+	        isEnabled = false;
+		}
+    }
+    
+    public float[] readAccelerometer() throws UnsupportedOperationException, IllegalStateException {
+        if (!mAccelerometerAvailable)
+                throw new UnsupportedOperationException(
+                                "Accelerometer is not available.");
+
+        if (!this.isEnabled)
+                throw new IllegalStateException(
+                                "Accelerometer was set to disabled!");
+        /* Get number of sensor-values the sensor will return. Could be
+         * variable, depending of the amount of axis (1D, 2D or 3D
+         * accelerometer). */
+        int sensorValues = Sensors
+                        .getNumSensorValues(Sensors.SENSOR_ACCELEROMETER);
+        float[] out = new float[sensorValues];
+
+        /* Make the OS fill the array we passed. */
+        Sensors.readSensor(Sensors.SENSOR_ACCELEROMETER, out);
+
+        
+        
+        /* And return it. */
+        return out;
+    }
+}

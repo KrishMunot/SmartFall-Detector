@@ -1,0 +1,170 @@
+/* 
+ * Sensor detection code based on:
+ * http://stackoverflow.com/a/1016941/555544
+ */
+
+package com.usc.ss12.falldetectionapp;
+
+import java.util.Calendar;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import android.annotation.TargetApi;
+import android.app.Activity;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.os.Build;
+import android.os.Bundle;
+import android.view.Display;
+import android.view.KeyEvent;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+public class MainActivity extends Activity implements SensorEventListener {
+
+	private Timer checkImmobile = new Timer();
+	private TimerTask ok;
+
+    private SensorManager mSensorManager;
+    private Sensor mAccelerometer;
+    
+    private final int MAX_RECORDS = 50;
+    private int numRecords = 0;
+    private int accel_count;
+    private double threshhold;
+    private boolean cycle;
+    
+    private int[] accel_data;
+    private int[] accel_diff;
+    
+    private int pull_buffer_counter = 10;
+    private int pull_buffer = 0;
+    //private double fall_buffer = 50;
+    private boolean isAYOActive;
+    
+    private Button buttonSettings;
+    private TextView titleSettings;
+    
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+	@Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        
+        titleSettings = (TextView) findViewById(R.id.textFallDetectionStatus);
+        titleSettings.setBackground(getResources().getDrawable(R.drawable.title));
+        
+        buttonSettings = (Button) findViewById(R.id.buttonSettings);
+        buttonSettings.setBackground(getResources().getDrawable(R.drawable.settingsc));
+
+        isAYOActive = false;
+        mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
+        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+    }
+    
+    private Drawable resize(Drawable image, int paramX, int paramY) {
+        Bitmap b = ((BitmapDrawable)image).getBitmap();
+        Bitmap bitmapResized = Bitmap.createScaledBitmap(b, paramX, paramY, false);
+        return new BitmapDrawable(getResources(), bitmapResized);
+    }
+
+    protected void onResume() {
+        super.onResume();
+        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_GAME);
+        isAYOActive = false;
+        TextView tv = (TextView) findViewById(R.id.accelerometer_values);
+        tv.setText("");
+		numRecords = 0;
+    }
+
+    protected void onPause() {
+        super.onPause();
+    }
+
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    	
+    }
+
+    public void onSensorChanged(SensorEvent event) {
+		if (event.sensor.getType() != Sensor.TYPE_ACCELEROMETER)
+			return;
+		float mSensorX, mSensorY, mSensorZ;
+		
+		mSensorX = event.values[0];
+		mSensorY = event.values[1];
+		mSensorZ = event.values[2];
+		
+		float accelValue = (mSensorX*mSensorX + mSensorY*mSensorY + mSensorZ*mSensorZ)
+				/ (SensorManager.GRAVITY_EARTH * SensorManager.GRAVITY_EARTH);
+		
+		TextView tv = (TextView) findViewById(R.id.accelerometer_values);
+		
+		if (pull_buffer_counter > pull_buffer) {
+			pull_buffer_counter = 0;
+			float sensorMagnitude = mSensorX*mSensorX + mSensorY*mSensorY + mSensorZ*mSensorZ
+					/ (SensorManager.GRAVITY_EARTH * SensorManager.GRAVITY_EARTH);
+			
+			if (sensorMagnitude > threshhold) {
+				
+				if(cycle)
+				
+				//Need to check if the "are you okay is already called"
+				if (!isAYOActive){
+					isAYOActive = true;
+					tv.setText(tv.getText() + "\n" + sensorMagnitude);
+					//Place code for "are you okay?" here
+					Intent verification = new Intent(this, Verification.class);
+			    	startActivity(verification);
+					
+					numRecords++; //Remove this line IF text of Accelerometer is different.
+				}
+			}	
+		}
+		pull_buffer_counter++;
+		
+    }
+
+    public void onSettingsButtonClick(View v) {  	
+    	Intent settingsIntent = new Intent(this, SettingsActivity.class);
+    	startActivity(settingsIntent);
+    }
+    
+    @Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) //Whenever anything is pressed
+	{
+    	if(ok != null)
+    		ok.cancel();
+    	
+    	ok = new TimerTask()
+    	{
+			public void run()
+			{
+				int from = 100;
+		    	int to = 601;
+		    	Calendar c = Calendar.getInstance();
+		    	int t = c.get(Calendar.HOUR_OF_DAY) * 100 + c.get(Calendar.MINUTE);
+		    	if(t < from && t > to) {
+		    		//Intent notif = new Intent(MainActivity.this, Verification.class);
+		    		//startActivity(notif);
+		    	}
+		    	else onKeyDown(-1,new KeyEvent(0,0)); //Resets timer if sleeping
+			}
+		};
+		if(keyCode == -1) { //If sleeping, sets timer to 10:00am
+			Calendar c = Calendar.getInstance();
+			c.set(Calendar.HOUR_OF_DAY, 10);
+			c.set(Calendar.MINUTE,0);
+			c.set(Calendar.SECOND,0);
+			checkImmobile.schedule(ok,c.getTime());	
+		}
+		else checkImmobile.schedule(ok,5000); //4 Hours == 14400000
+		return false; //Allows event to continue propagating
+	}
+}
